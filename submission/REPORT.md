@@ -7,6 +7,8 @@
 - Commit SHA cuối:
 - Thành viên và vai trò:
   - Nguyễn Văn Trọng — Logging & PII (CP1)
+  - Nguyễn Tuấn Hùng - Metrics, Traces, Dashboard & Alerts (Checkpoint CP2)
+
 
 ## 2. Kết quả kỹ thuật
 
