@@ -8,7 +8,7 @@
 - Thành viên và vai trò:
   - Nguyễn Văn Trọng — Logging & PII (CP1)
   - Nguyễn Tuấn Hùng - Metrics, Traces, Dashboard & Alerts (Checkpoint CP2)
-
+  - Phạm Tiến Hưng - Challenge: Điều tra Incident (Checkpoint CP3)
 
 ## 2. Kết quả kỹ thuật
 
@@ -27,8 +27,8 @@ Mỗi request được gán một `correlation_id` duy nhất dạng `req-<8 hex
 Hai dòng log `request_received` và `response_sent` cùng chung ID, chứng minh truy vết end-to-end:
 
 ```json
-{"event": "request_received", "correlation_id": "req-ce9a43be", "session_id": "s01", ...}
-{"event": "response_sent",    "correlation_id": "req-ce9a43be", "session_id": "s01", ...}
+{"event": "request_received", "correlation_id": "req-a649877a", "session_id": "s01", ...}
+{"event": "response_sent",    "correlation_id": "req-a649877a", "session_id": "s01", ...}
 ```
 
 ### Evidence PII redaction
@@ -94,13 +94,13 @@ Mỗi runbook có ba bước kiểm tra đầu tiên theo luồng **Dashboard �
 
 ## 6. Điều tra challenge
 
-- Challenge ID:
-- Triệu chứng từ metrics:
-- Trace ID liên quan:
-- Log line/correlation ID liên quan:
-- Root cause:
-- Fix action:
-- Preventive measure:
+- Challenge ID: `day13-k4-observability-v1`
+- Triệu chứng từ metrics: P95 Latency tăng vọt lên mức ~2.7s (vượt ngưỡng SLO, kích hoạt alert `high_latency_p95`).
+- Trace ID liên quan: (Có thể truy xuất trace trên Langfuse tương ứng với ID bên dưới).
+- Log line/correlation ID liên quan: `req-7fdf40a3` (Dòng log `response_sent` ghi nhận `latency_ms`: 2667).
+- Root cause: Xem trên Langfuse Trace Waterfall thấy span `retrieve` (gọi ở file `mock_rag.py`) bị treo mất 2.5s do sự cố `rag_slow` (`time.sleep(2.5)`).
+- Fix action: Loại bỏ lệnh delay/sửa lỗi trong code hàm `retrieve()` tại `app/mock_rag.py` (tắt cờ incident).
+- Preventive measure: Thiết lập `timeout` tối đa (vd: 500ms) cho các truy vấn Vector Database/RAG. Nếu vượt quá thời gian, dùng fallback response/cache thay vì để request bị treo toàn hệ thống.
 
 ## 7. Đóng góp cá nhân
 
@@ -127,7 +127,7 @@ Mỗi runbook có ba bước kiểm tra đầu tiên theo luồng **Dashboard �
 - Thứ tự processor trong structlog rất quan trọng: `scrub_event` phải nằm **sau** `TimeStamper` và **trước** `JsonlFileProcessor` để PII được che trước khi ghi file.
 - Dùng `hash_user_id()` (SHA-256) thay vì lưu user_id gốc — cho phép nhóm log theo user mà không lộ danh tính.
 
-### Nguyễn Văn Trọng — Metrics, Traces, Dashboard & Alerts (CP2)
+### Nguyễn Tuấn Hùng — Metrics, Traces, Dashboard & Alerts (CP2)
 
 **Commit SHA:** `8ec4aab`
 
@@ -147,3 +147,23 @@ Mỗi runbook có ba bước kiểm tra đầu tiên theo luồng **Dashboard �
 - P95 phù hợp hơn trung bình để phát hiện nhóm request chậm gây ảnh hưởng xấu tới người dùng.
 - Alert tốt phải nêu triệu chứng, mức độ, thời gian duy trì, owner và runbook; không chỉ báo tên một component nội bộ.
 - Luồng điều tra hiệu quả là xác nhận triệu chứng trên dashboard, mở trace bất thường trong Langfuse, sau đó dùng `correlation_id` để chứng minh nguyên nhân bằng log.
+
+### Phạm Tiến Hưng — Challenge: Điều tra Incident (CP3)
+
+**Commit SHA:** (Cập nhật sau khi push)
+
+**Phần việc đã thực hiện:**
+
+| # | Công việc | File/evidence | Mô tả |
+|---|---|---|---|
+| 1 | Cài đặt môi trường | `scripts/` | Xử lý lỗi thư viện thiếu (uvicorn, structlog) để khởi chạy API. |
+| 2 | Kích hoạt sự cố | `config/challenge.json` | Chạy `inject_incident.py` để inject sự cố `rag_slow` vào hệ thống mô phỏng. |
+| 3 | Sinh tải (Load Test) | `scripts/load_test.py` | Chạy bộ test với `--challenge` để đo lường độ trễ của hệ thống. |
+| 4 | Truy vết Log | `data/logs.jsonl` | Dùng PowerShell lọc ra `correlation_id` (vd: `req-7fdf40a3`) có `latency_ms` > 2.6s. |
+| 5 | Phân tích Root Cause | `app/mock_rag.py` | Dựa vào Trace, phát hiện span `retrieve` bị delay 2.5s do sự cố `rag_slow`. |
+| 6 | Tổng hợp Báo cáo | `submission/REPORT.md` | Ghi nhận nguyên nhân, hướng khắc phục và biện pháp phòng ngừa (thêm timeout, fallback). |
+
+**Điều đã học:**
+
+- Luồng Observability (Metrics → Traces → Logs) giúp thu hẹp phạm vi từ "có gì đó sai sai" thành "hàm A dòng B bị lỗi".
+- Các dịch vụ bên thứ ba (như Vector DB) không bao giờ nên chặn (block) toàn bộ API mà phải có cơ chế Timeout và Fallback an toàn.

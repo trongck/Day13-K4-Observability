@@ -1,0 +1,37 @@
+[
+    {
+        "service":  "api",
+        "payload":  {
+                        "message_preview":  "What is your refund policy? My email is [REDACTED_EMAIL]"
+                    },
+        "event":  "request_received",
+        "model":  "gpt-4o-mini",
+        "user_id_hash":  "2055254ee30a",
+        "feature":  "qa",
+        "session_id":  "s01",
+        "env":  "dev",
+        "correlation_id":  "req-a649877a",
+        "level":  "info",
+        "ts":  "2026-08-11T08:21:52.540086Z"
+    },
+    {
+        "service":  "api",
+        "latency_ms":  160,
+        "tokens_in":  36,
+        "tokens_out":  130,
+        "cost_usd":  0.002058,
+        "quality_score":  0.9,
+        "payload":  {
+                        "answer_preview":  "Starter answer. Teams should improve this output logic and add better quality ch..."
+                    },
+        "event":  "response_sent",
+        "model":  "gpt-4o-mini",
+        "user_id_hash":  "2055254ee30a",
+        "feature":  "qa",
+        "session_id":  "s01",
+        "env":  "dev",
+        "correlation_id":  "req-a649877a",
+        "level":  "info",
+        "ts":  "2026-08-11T08:21:52.704558Z"
+    }
+]
