@@ -11,9 +11,9 @@
 ## 2. Kết quả kỹ thuật
 
 - Điểm `validate_logs.py`: **100/100**
-- Tổng số traces: 10
+- Tổng số traces: **ít nhất 10** (ảnh evidence ghi nhận 40 observations, gồm 20 generation và 20 span)
 - Số PII leak còn lại: 0
-- Link/đường dẫn dashboard: http://127.0.0.1:8000/metrics
+- Dashboard: **Langfuse → My Project → Dashboards → SYSTEM OBSERVABILITY DASHBOARD**
 
 ## 3. Logging và tracing
 
@@ -43,10 +43,15 @@ Kiểm chứng: chạy `Select-String "@" data/logs.jsonl` trả về rỗng →
 
 ### Evidence trace waterfall
 
+Xem ảnh: `submission/evidence/Screenshot một trace waterfall.png`
 
+Trace ID: `f8ffaec311e3586bcedab7a33394e897`.
+
+Waterfall cho thấy một trace `run` gồm một span gốc và một generation con, với thời lượng tổng **3.18 s** và chi phí **$0.001956**. Trace có metadata `session_id=s02`, `env=default` và `user_id` đã được hash.
 
 ### Giải thích một span đáng chú ý
 
+Generation `run` là span chiếm gần như toàn bộ thời gian trace (3.18 s). Log View của trace thể hiện metadata như `doc_count`, `query_preview`, `prompt_name`, `prompt_label`, `prompt_version` và `prompt_source`. Khi latency tăng, nhóm sẽ bắt đầu từ span này, lấy trace ID/correlation ID rồi đối chiếu log để xác định request và bước xử lý gây chậm.
 
 
 ## 4. Prompt versioning
@@ -59,10 +64,31 @@ Kiểm chứng: chạy `Select-String "@" data/logs.jsonl` trả về rỗng →
 
 ## 5. Dashboard, SLO và alerts
 
-- Kết quả `validate_dashboard.py`:
-- Evidence dashboard:
-- SLO đã chọn và lý do:
-- Alert rules và runbook:
+- **Kết quả `validate_dashboard.py`:** `HỢP LỆ: 6/6 panel có trong dashboard contract.`
+- **Evidence dashboard:** `submission/evidence/Dashboard.png`. Ảnh dashboard Langfuse có time range **Past 1 hour** và thể hiện đủ sáu nhóm chỉ số: latency P50/P95/P99, traffic, error rate/breakdown, cost, input/output tokens và average quality.
+
+### SLO đã chọn
+
+SLO được khai báo tại `config/slo.yaml`, dùng cửa sổ đánh giá 28 ngày và nhất quán với threshold của dashboard.
+
+| SLI | Objective | Target | Lý do |
+|---|---:|---:|---|
+| `latency_p95_ms` | P95 ≤ 3,000 ms | 99.5% | Phản hồi quá 3 giây ảnh hưởng trực tiếp tới trải nghiệm người dùng. |
+| `error_rate_pct` | ≤ 2% | 99.0% | Giữ phần lớn request nhận được phản hồi hợp lệ. |
+| `daily_cost_usd` | ≤ $2.50/ngày | 100.0% | Kiểm soát chi phí vận hành trong ngân sách lab. |
+| `quality_score_avg` | ≥ 0.75 | 95.0% | Duy trì chất lượng phản hồi ở mức chấp nhận được. |
+
+### Alert rules và runbook
+
+Alert rules nằm tại `config/alert_rules.yaml`; hướng dẫn phản ứng tương ứng nằm tại `docs/alerts.md`. Cả ba alert đều dựa trên triệu chứng người dùng/SLO, không phụ thuộc tên implementation nội bộ.
+
+| Alert | Severity | Điều kiện kích hoạt | Owner |
+|---|---|---|---|
+| `high_latency_p95` | warning | `latency_p95 > 3000ms for 5 minutes` | on-call-engineer |
+| `elevated_error_rate` | critical | `error_rate_pct > 5 for 3 minutes` | on-call-engineer |
+| `cost_budget_exceeded` | warning | `daily_cost_usd > 2.5` | team-lead |
+
+Mỗi runbook có ba bước kiểm tra đầu tiên theo luồng **Dashboard → Langfuse trace → log theo correlation ID**, cùng mitigation tạm thời và owner chịu trách nhiệm.
 
 ## 6. Điều tra challenge
 
@@ -98,3 +124,24 @@ Kiểm chứng: chạy `Select-String "@" data/logs.jsonl` trả về rỗng →
 - `clear_contextvars()` bắt buộc vì ASGI server tái sử dụng task/thread — nếu không clear, context cũ leak sang request mới gây gán nhầm user.
 - Thứ tự processor trong structlog rất quan trọng: `scrub_event` phải nằm **sau** `TimeStamper` và **trước** `JsonlFileProcessor` để PII được che trước khi ghi file.
 - Dùng `hash_user_id()` (SHA-256) thay vì lưu user_id gốc — cho phép nhóm log theo user mà không lộ danh tính.
+
+### Nguyễn Văn Trọng — Metrics, Traces, Dashboard & Alerts (CP2)
+
+**Commit SHA:** `8ec4aab`
+
+**Phần việc đã thực hiện:**
+
+| # | Công việc | File/evidence | Mô tả |
+|---|---|---|---|
+| 1 | Dashboard Langfuse | `submission/evidence/Dashboard.png` | Tạo dashboard `SYSTEM OBSERVABILITY DASHBOARD` theo time range 1 giờ, thể hiện đủ 6 nhóm chỉ số bắt buộc. |
+| 2 | Dashboard specification | `docs/dashboard-spec.md` | Ghi rõ công cụ Langfuse, nguồn dữ liệu, đơn vị, time range, refresh và threshold của 6 nhóm chỉ số. |
+| 3 | SLO | `config/slo.yaml` | Đặt SLO latency, error rate, daily cost và quality phù hợp contract dashboard. |
+| 4 | Alert rules | `config/alert_rules.yaml` | Khai báo ba alert symptom-based cho chậm phản hồi, tỷ lệ lỗi tăng và vượt ngân sách. |
+| 5 | Alert runbook | `docs/alerts.md` | Viết mức độ ảnh hưởng, ba bước kiểm tra đầu tiên, mitigation và owner cho từng alert. |
+| 6 | Trace evidence | `submission/evidence/Screenshot danh sách ≥ 10 traces.png`, `submission/evidence/Screenshot một trace waterfall.png` | Lưu danh sách traces và waterfall để điều tra theo chuỗi Metrics → Traces → Logs. |
+
+**Điều đã học:**
+
+- P95 phù hợp hơn trung bình để phát hiện nhóm request chậm gây ảnh hưởng xấu tới người dùng.
+- Alert tốt phải nêu triệu chứng, mức độ, thời gian duy trì, owner và runbook; không chỉ báo tên một component nội bộ.
+- Luồng điều tra hiệu quả là xác nhận triệu chứng trên dashboard, mở trace bất thường trong Langfuse, sau đó dùng `correlation_id` để chứng minh nguyên nhân bằng log.
