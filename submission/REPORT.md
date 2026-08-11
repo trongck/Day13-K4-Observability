@@ -9,10 +9,10 @@
 
 ## 2. Kết quả kỹ thuật
 
-- Điểm `validate_logs.py`:
-- Tổng số traces:
-- Số PII leak còn lại:
-- Link/đường dẫn dashboard:
+- Điểm `validate_logs.py`:  100/100
+- Tổng số traces: 10
+- Số PII leak còn lại: 0
+- Link/đường dẫn dashboard: http://127.0.0.1:8001/metrics
 
 ## 3. Logging và tracing
 

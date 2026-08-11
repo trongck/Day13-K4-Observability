@@ -1,0 +1,16 @@
+﻿
+data\logs.jsonl:1:{"service": "api", "payload": {"message_preview": "What is your refund policy? My email is 
+[REDACTED_EMAIL]"}, "event": "request_received", "env": "dev", "session_id": "s01", "user_id_hash": "2055254ee30a", 
+"correlation_id": "req-ce9a43be", "model": "claude-sonnet-4-5", "feature": "qa", "level": "info", "ts": 
+"2026-08-11T08:19:42.554256Z"}
+data\logs.jsonl:2:{"service": "api", "latency_ms": 150, "tokens_in": 36, "tokens_out": 153, "cost_usd": 0.002403, 
+"quality_score": 0.9, "payload": {"answer_preview": "Starter answer. Teams should improve this output logic and add 
+better quality ch..."}, "event": "response_sent", "env": "dev", "session_id": "s01", "user_id_hash": "2055254ee30a", 
+"correlation_id": "req-ce9a43be", "model": "claude-sonnet-4-5", "feature": "qa", "level": "info", "ts": 
+"2026-08-11T08:19:42.706353Z"}
+data\logs.jsonl:3:{"service": "api", "payload": {"message_preview": "Explain why metrics traces and logs work 
+together"}, "event": "request_received", "env": "dev", "session_id": "s02", "user_id_hash": "95b6504a8bd6", 
+"correlation_id": "req-cde209dc", "model": "claude-sonnet-4-5", "feature": "qa", "level": "info", "ts": 
+"2026-08-11T08:19:42.712151Z"}
+
+
