@@ -150,7 +150,7 @@ Mỗi runbook có ba bước kiểm tra đầu tiên theo luồng **Dashboard �
 
 ### Phạm Tiến Hưng — Challenge: Điều tra Incident (CP3)
 
-**Commit SHA:** (Cập nhật sau khi push)
+**Commit SHA:** `be5f003`
 
 **Phần việc đã thực hiện:**
 
